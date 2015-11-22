@@ -1,2 +1,2 @@
 # machinelearning
-Please download and open index.html from this repository to review the results of the Coursera Data Science Specialization machine learning project analysis.
+Please pull this repository locally and then open index.html to review the results of the Coursera Data Science Specialization machine learning project analysis. If you have difficulty accessing or viewing index.html in a human-readable form, please view the [PDF version](https://github.com/kwdaniels/machinelearning/blob/master/Predicting%20Excercise%20Activity%20Quality%20from%20Activity%20Monitors.pdf) or download and open the [zip version of index.html](https://github.com/kwdaniels/machinelearning/blob/master/index.zip).
