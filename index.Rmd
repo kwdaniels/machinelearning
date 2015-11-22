@@ -1,0 +1,80 @@
+---
+title: "Predicting Exercise Activity Quality from Activity Monitors"
+author: "Ken Daniels"
+date: "November 22, 2015"
+framework: io2012
+output: html_document
+hitheme: tomorrow
+mode: selfcontained
+highlighter: highlight.js
+url:
+  assets: ../../assets
+  lib: ../../librariesNew
+widgets: mathjax
+---
+## Executive Summary
+Given the Groupware@Les Weight Lifting Exercises training dataset from http://groupware.les.inf.puc-rio.br/har, we seek to obtain a model that predicts the quality of excercise activity for new samples. After further subdividing the dataset into equal-sized training and testing datasets, we employ a random forest machine learning algorithm to obtain a model with an expected error rate no greater than 0.7%.  
+
+## Analysis
+
+We begin by loading the raw data into variables "trainRaw" and "test":
+
+```{r, cache = TRUE, echo = TRUE, fig.width=7, fig.height = 5}
+trainRaw <- read.csv("https://d396qusza40orc.cloudfront.net/predmachlearn/pml-training.csv", na.strings=c("NA",""))
+testFull <- read.csv("https://d396qusza40orc.cloudfront.net/predmachlearn/pml-testing.csv", na.strings=c("NA",""))
+```
+
+We then transform "trainRaw" into variable "train" by exluding the first 6 incidental columns, then removing all columns for which fewer than half the rows contain values, leaving us with a training dataset having 19622 observations of 54 attributes each:
+
+```{r, echo = TRUE, fig.width=7, fig.height = 5}
+train<-trainRaw[,7:dim(trainRaw)[2]]
+train <- train[,apply(!is.na(train),2,sum)>=(dim(train)[1])/2]
+dim(train)
+```
+
+Now we further subdivide the original training set into two equally sized sets, trainSub and testSub:
+
+```{r, cache = FALSE, echo = TRUE, fig.width=7, fig.height = 5}
+library(AppliedPredictiveModeling)
+library(caret)
+set.seed(4810)
+trainSubIndex <- createDataPartition(y=train$classe,p=0.5,list=FALSE)
+trainSub <- train[trainSubIndex,]
+testSub <- train[-trainSubIndex,]
+dim(trainSub)
+dim(testSub)
+```
+
+We use trainSub to develop our caret-based random forest ("rf") model, employing 3-fold cross validation ("cv"):
+
+```{r, cache = TRUE, echo = TRUE, fig.width=7, fig.height = 5}
+library(caret)
+rffit<-train(classe~.,data=trainSub,method="rf",trControl=trainControl(method="cv",number=3),prox=TRUE,allowParallel=TRUE)
+print(rffit)
+print(rffit$finalModel)
+```
+
+This results in a model with a theoretical expected error rate ranging between 0% (for predicting outcome E) and 0.7% (for predicting outcome B). This aligns with the model accuracy of 0.9925 (mtry=27) with standard deviation of 0.00389. Note that we could have improved the accuracy of the model by increasing the k-fold value, but this could have led to overfitting and greater machine processing times.
+
+We now verify our training-based model against our testSub dataset:
+
+```{r, cache = FALSE, echo = TRUE, fig.width=7, fig.height = 5}
+predictedClasse <- predict(rffit,newdata=testSub)
+testClasse <- testSub$classe
+numIncorrectPredictions <- length(testClasse[predictedClasse != testClasse]) 
+numTestSamples <- length(testClasse)
+missRate <- numIncorrectPredictions / numTestSamples
+print(missRate)
+```
+
+Thus, we obtain a miss rate of `r 100*missRate`% when applying our random forest model against the test data subset. This falls within the theoretical error rate of no greater than 0.7% predicted by our model.
+
+```{r, cache = FALSE, echo = TRUE, fig.width=7, fig.height = 5}
+predictedClasse <- predict(rffit,newdata=testSub)
+testClasse <- testSub$classe
+numIncorrectPredictions <- length(testClasse[predictedClasse != testClasse]) 
+numTestSamples <- length(testClasse)
+missRate <- numIncorrectPredictions / numTestSamples
+print(missRate)
+```
+
